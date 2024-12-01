@@ -1,0 +1,3 @@
+*.txt
+.zig-cache
+zig-out
