@@ -10,16 +10,6 @@ const fmt = std.fmt;
 
 const ArrayList = std.ArrayList;
 
-fn parseNumber(tokens: *mem.SplitIterator(u8, .any)) !usize {
-    var token = tokens.next() orelse return error.MissingToken;
-    
-    while (mem.eql(u8, token, "")) {
-        token = tokens.next() orelse return error.MissingToken;
-    }
-
-    return fmt.parseUnsigned(usize, token, 10);
-}
-
 const Input = struct {
     reports: ArrayList(ArrayList(usize)) = undefined,
 
@@ -72,19 +62,19 @@ fn isSafeDifference(a: usize, b: usize) bool {
     return true;
 }
 
-fn isReportSafe(report: []usize) bool {
-    debug.assert(report.len >= 2);
+fn isReportSafe(report: ArrayList(usize)) bool {
+    debug.assert(report.items.len >= 2);
 
-    if (!isSafeDifference(report[0], report[1]))
+    if (!isSafeDifference(report.items[0], report.items[1]))
         return false;
 
-    const order: Order = switch (report[0] < report[1]) {
+    const order: Order = switch (report.items[0] < report.items[1]) {
         true => .increasing,
         false => .decreasing,
     };
 
-    var previous = report[1];
-    for (report[2..]) |value| {
+    var previous = report.items[1];
+    for (report.items[2..]) |value| {
         if (!isSafeDifference(previous, value))
             return false;
 
@@ -102,12 +92,112 @@ fn isReportSafe(report: []usize) bool {
     return true;
 }
 
+fn isReportSafe2(report: ArrayList(usize)) !bool {
+    debug.assert(report.items.len >= 2);
+
+    if (!isSafeDifference(report.items[0], report.items[1])) {
+        var first_alternate = try report.clone();
+        defer first_alternate.deinit();
+        _ = first_alternate.orderedRemove(0);
+
+        if (!isReportSafe(first_alternate)) {
+            var second_alternate = try report.clone();
+            defer second_alternate.deinit();
+            _ = second_alternate.orderedRemove(1);
+
+            return isReportSafe(second_alternate);
+        }
+        else return true;
+    }
+
+    const order: Order = switch (report.items[0] < report.items[1]) {
+        true => .increasing,
+        false => .decreasing,
+    };
+
+    var previous = report.items[1];
+    for (report.items[2..], 2..) |value, index| {
+        if (!isSafeDifference(previous, value)) {
+            var first_alternate = try report.clone();
+            defer first_alternate.deinit();
+            _ = first_alternate.orderedRemove(index - 1);
+
+            if (!isReportSafe(first_alternate)) {
+                var second_alternate = try report.clone();
+                defer second_alternate.deinit();
+                _ = second_alternate.orderedRemove(index);
+
+                return isReportSafe(second_alternate);
+            }
+            else return true;
+        }
+
+        if (previous < value) {
+            if (order == .decreasing) {
+                var first_alternate = try report.clone();
+                defer first_alternate.deinit();
+                _ = first_alternate.orderedRemove(index - 1);
+
+                if (isReportSafe(first_alternate))
+                    return true;
+
+                var second_alternate = try report.clone();
+                defer second_alternate.deinit();
+                _ = second_alternate.orderedRemove(index);
+
+                if (isReportSafe(second_alternate))
+                    return true;
+
+                var third_alternate = try report.clone();
+                defer third_alternate.deinit();
+                _ = third_alternate.orderedRemove(index - 2);
+
+                return isReportSafe(third_alternate);
+            }
+        }
+        else if (order == .increasing) {
+            var first_alternate = try report.clone();
+            defer first_alternate.deinit();
+            _ = first_alternate.orderedRemove(index - 1);
+
+            if (isReportSafe(first_alternate))
+                return true;
+
+            var second_alternate = try report.clone();
+            defer second_alternate.deinit();
+            _ = second_alternate.orderedRemove(index);
+
+            if (isReportSafe(second_alternate))
+                return true;
+
+            var third_alternate = try report.clone();
+            defer third_alternate.deinit();
+            _ = third_alternate.orderedRemove(index - 2);
+
+            return isReportSafe(third_alternate);
+        }
+
+        previous = value;
+    }
+
+    return true;
+}
 
 fn partOne(input: Input) usize {
     var safe_report_count: usize = 0;
     for (input.reports.items) |report| {
-        if (isReportSafe(report.items)) 
+        if (isReportSafe(report)) 
             safe_report_count += 1;
+    }
+    return safe_report_count;
+}
+
+fn partTwo(input: Input) !usize {
+    var safe_report_count: usize = 0;
+    for (input.reports.items) |report| {
+        if (try isReportSafe2(report)) {
+            safe_report_count += 1;
+        }
     }
     return safe_report_count;
 }
@@ -137,6 +227,7 @@ pub fn main() !void {
     defer input.deinit();
 
     try stdout.print("{d}\n", .{partOne(input)});
+    try stdout.print("{d}\n", .{try partTwo(input)});
 
     try bw.flush();
 }
