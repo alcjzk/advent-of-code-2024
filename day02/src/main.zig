@@ -75,16 +75,8 @@ fn isReportSafe(report: ArrayList(usize)) bool {
 
     var previous = report.items[1];
     for (report.items[2..]) |value| {
-        if (!isSafeDifference(previous, value))
+        if (!isPairSafe(previous, value, order))
             return false;
-
-        if (previous < value) {
-            if (order == .decreasing)
-                return false;
-        }
-        else if (order == .increasing) {
-            return false;
-        }
 
         previous = value;
     }
@@ -92,22 +84,33 @@ fn isReportSafe(report: ArrayList(usize)) bool {
     return true;
 }
 
+fn isPairSafe(a: usize, b: usize, order: Order) bool {
+    if (!isSafeDifference(a, b))
+        return false;
+    if (a < b) {
+        if (order == .decreasing) {
+            return false;
+        }
+    }
+    else if (order == .increasing) {
+        return false;
+    }
+    return true;
+}
+
 fn isReportSafe2(report: ArrayList(usize)) !bool {
     debug.assert(report.items.len >= 2);
 
     if (!isSafeDifference(report.items[0], report.items[1])) {
-        var first_alternate = try report.clone();
-        defer first_alternate.deinit();
-        _ = first_alternate.orderedRemove(0);
+        for (0..2) |remove_index| {
+            var alternate = try report.clone();
+            defer alternate.deinit();
+            _ = alternate.orderedRemove(remove_index);
 
-        if (!isReportSafe(first_alternate)) {
-            var second_alternate = try report.clone();
-            defer second_alternate.deinit();
-            _ = second_alternate.orderedRemove(1);
-
-            return isReportSafe(second_alternate);
+            if (isReportSafe(alternate))
+                return true;
         }
-        else return true;
+        return false;
     }
 
     const order: Order = switch (report.items[0] < report.items[1]) {
@@ -117,64 +120,16 @@ fn isReportSafe2(report: ArrayList(usize)) !bool {
 
     var previous = report.items[1];
     for (report.items[2..], 2..) |value, index| {
-        if (!isSafeDifference(previous, value)) {
-            var first_alternate = try report.clone();
-            defer first_alternate.deinit();
-            _ = first_alternate.orderedRemove(index - 1);
+        if (!isPairSafe(previous, value, order)) {
+            for (0..3) |sub| {
+                var alternate = try report.clone();
+                defer alternate.deinit();
+                _ = alternate.orderedRemove(index - sub);
 
-            if (!isReportSafe(first_alternate)) {
-                var second_alternate = try report.clone();
-                defer second_alternate.deinit();
-                _ = second_alternate.orderedRemove(index);
-
-                return isReportSafe(second_alternate);
-            }
-            else return true;
-        }
-
-        if (previous < value) {
-            if (order == .decreasing) {
-                var first_alternate = try report.clone();
-                defer first_alternate.deinit();
-                _ = first_alternate.orderedRemove(index - 1);
-
-                if (isReportSafe(first_alternate))
+                if (isReportSafe(alternate))
                     return true;
-
-                var second_alternate = try report.clone();
-                defer second_alternate.deinit();
-                _ = second_alternate.orderedRemove(index);
-
-                if (isReportSafe(second_alternate))
-                    return true;
-
-                var third_alternate = try report.clone();
-                defer third_alternate.deinit();
-                _ = third_alternate.orderedRemove(index - 2);
-
-                return isReportSafe(third_alternate);
             }
-        }
-        else if (order == .increasing) {
-            var first_alternate = try report.clone();
-            defer first_alternate.deinit();
-            _ = first_alternate.orderedRemove(index - 1);
-
-            if (isReportSafe(first_alternate))
-                return true;
-
-            var second_alternate = try report.clone();
-            defer second_alternate.deinit();
-            _ = second_alternate.orderedRemove(index);
-
-            if (isReportSafe(second_alternate))
-                return true;
-
-            var third_alternate = try report.clone();
-            defer third_alternate.deinit();
-            _ = third_alternate.orderedRemove(index - 2);
-
-            return isReportSafe(third_alternate);
+            return false;
         }
 
         previous = value;
