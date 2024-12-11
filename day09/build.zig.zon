@@ -1,0 +1,14 @@
+.{
+    .name = "day09",
+    .version = "0.0.0",
+    .dependencies = .{
+        .aoc = .{
+            .path = "../common",
+        }
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
