@@ -1,4 +1,5 @@
 const std = @import("std");
+const aoc = @import("aoc");
 
 const heap = std.heap;
 const fs = std.fs;
@@ -12,98 +13,20 @@ const AutoHashMap = std.AutoHashMap;
 const ArrayList = std.ArrayList;
 const Allocator = mem.Allocator;
 
+const Vector2 = aoc.Vector2;
+const Map2D = aoc.Map2D;
 const Position = Vector2(isize);
 const Frequency = u8;
 
 const empty_cell = '.';
 const antinode = '#';
 
-const Map = struct {
-    width: usize,
-    height: usize,
-    map: ArrayList(u8),
-
-    const Self = @This();
-
-    pub fn init(allocator: Allocator, bytes: []const u8) !Self {
-        var self: Self = undefined;
-
-        self.map = ArrayList(u8).init(allocator);
-        errdefer self.map.deinit();
-
-        var lines = mem.tokenizeScalar(u8, bytes, '\n');
-        self.width = lines.peek().?.len;
-        self.height = 0;
-
-        while (lines.next()) |line| {
-            try self.map.appendSlice(line);
-            self.height += 1;
-        }
-
-        return self;
-    }
-
-    pub fn initSized(allocator: Allocator, width: usize, height: usize) !Self {
-        var self: Self = undefined;
-
-        const size = width * height;
-
-        self.map = try ArrayList(u8).initCapacity(allocator, size);
-        self.map.appendNTimesAssumeCapacity(0, size);
-        self.width = width;
-        self.height = height;
-
-        return self;
-    }
-
-    pub fn deinit(self: Self) void {
-        self.map.deinit();
-    }
-
-    pub fn getCell(self: Self, position: Position) ?u8 {
-        if (position.x < 0 or position.x >= self.width)
-            return null;
-        if (position.y < 0 or position.y >= self.height)
-            return null;
-
-        return self.getCellAssumeInBounds(position);
-    }
-
-    pub fn getCellAssumeInBounds(self: Self, position: Position) u8 {
-        const x: usize = @intCast(position.x);
-        const y: usize = @intCast(position.y);
-
-        return self.map.items[self.width * y + x];
-    }
-
-    pub fn getCellPtr(self: *Self, position: Position) ?*u8 {
-        if (position.x < 0 or position.x >= self.width)
-            return null;
-        if (position.y < 0 or position.y >= self.height)
-            return null;
-
-        const x: usize = @intCast(position.x);
-        const y: usize = @intCast(position.y);
-
-        return &self.map.items[self.width * y + x];
-    }
-
-    pub fn countMatchingCells(self: Self, value: u8) usize {
-        var count: usize = 0;
-        for (self.map.items) |cell| {
-            if (cell == value)
-                count += 1;
-        }
-        return count;
-    }
-};
-
 const Antennas = struct {
     inner: AutoHashMap(Frequency, ArrayList(Position)),
 
     const Self = @This();
 
-    pub fn init(allocator: Allocator, map: Map) !Self {
+    pub fn init(allocator: Allocator, map: Map2D(u8)) !Self {
         var self: Self = undefined;
 
         self.inner = AutoHashMap(Frequency, ArrayList(Position)).init(allocator);
@@ -138,47 +61,6 @@ const Antennas = struct {
     }
 };
 
-pub fn Vector2(comptime T: type) type {
-    return struct {
-        x: T,
-        y: T,
-
-        const Self = @This();
-
-        pub fn add(self: Self, other: Self) Self {
-            return .{
-                .x = self.x + other.x,
-                .y = self.y + other.y,
-            };
-        }
-
-        pub fn sub(self: Self, other: Self) Self {
-            return .{
-                .x = self.x - other.x,
-                .y = self.y - other.y,
-            };
-        }
-
-        pub fn mul(self: Self, value: T) Self {
-            return .{
-                .x = self.x * value,
-                .y = self.y * value,
-            };
-        }
-
-        pub fn divExact(self: Self, value: T) Self {
-            return .{
-                .x = @divExact(self.x, value),
-                .y = @divExact(self.y, value),
-            };
-        }
-
-        pub fn eql(self: Self, other: Self) bool {
-            return self.x == other.x and self.y == other.y;
-        }
-    };
-}
-
 pub fn Pairs(comptime T: type) type {
     return struct {
         array: []const T,
@@ -206,7 +88,7 @@ pub fn Pairs(comptime T: type) type {
 }
 
 pub fn partOne(allocator: mem.Allocator, antennas: Antennas, map_width: usize, map_height: usize) !u64 {
-    var antinodes = try Map.initSized(allocator, map_width, map_height);
+    var antinodes = try Map2D(u8).initSized(allocator, map_width, map_height);
     defer antinodes.deinit();
 
     var entries = antennas.inner.iterator();
@@ -230,7 +112,7 @@ pub fn partOne(allocator: mem.Allocator, antennas: Antennas, map_width: usize, m
 }
 
 pub fn partTwo(allocator: mem.Allocator, antennas: Antennas, map_width: usize, map_height: usize) !u64 {
-    var antinodes = try Map.initSized(allocator, map_width, map_height);
+    var antinodes = try Map2D(u8).initSized(allocator, map_width, map_height);
     defer antinodes.deinit();
 
     var entries = antennas.inner.iterator();
@@ -282,7 +164,7 @@ pub fn main() !void {
     const bytes = try cwd.readFileAlloc(allocator, input_path, 1024 * 1024);
     defer allocator.free(bytes);
 
-    var map = try Map.init(allocator, bytes);
+    var map = try Map2D(u8).initBytes(allocator, bytes);
     defer map.deinit();
 
     var antennas = try Antennas.init(allocator, map);

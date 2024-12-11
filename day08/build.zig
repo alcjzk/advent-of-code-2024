@@ -6,12 +6,16 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const mod_aoc = b.dependency("aoc", .{}).module("aoc");
+
     const exe = b.addExecutable(.{
         .name = exe_target_name,
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
+
+    exe.root_module.addImport("aoc", mod_aoc);
 
     b.installArtifact(exe);
 
@@ -21,6 +25,8 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    exe_check.root_module.addImport("aoc", mod_aoc);
 
     const check = b.step("check", "Check compilation");
     check.dependOn(&exe_check.step);
