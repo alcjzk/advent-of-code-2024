@@ -5,6 +5,11 @@ pub fn Vector2(comptime T: type) type {
 
         const Self = @This();
 
+        pub const left = Self{ .x = -1, .y = 0 };
+        pub const right = Self{ .x = 1, .y = 0 };
+        pub const up = Self{ .x = 0, .y = -1 };
+        pub const down = Self{ .x = 0, .y = 1 };
+
         pub fn add(self: Self, other: Self) Self {
             return .{
                 .x = self.x + other.x,
