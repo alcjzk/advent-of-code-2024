@@ -15,6 +15,25 @@ pub fn Map2D(comptime T: type) type {
 
         const Self = @This();
 
+        const Positions = struct {
+            x: isize = -1,
+            y: isize = 0,
+            map: *const Self,
+
+            pub fn next(self: *@This()) ?Vector2(isize) {
+                if (self.x < self.map.width - 1) {
+                    self.x += 1;
+                } else if (self.y < self.map.height - 1) {
+                    self.x = 0;
+                    self.y += 1;
+                } else {
+                    return null;
+                }
+
+                return .{ .x = self.x, .y = self.y };
+            }
+        };
+
         pub fn initBytes(allocator: Allocator, bytes: []const u8) !Self {
             if (T != u8)
                 @compileError("Map2D.initBytes only supports type u8\n");
@@ -92,6 +111,19 @@ pub fn Map2D(comptime T: type) type {
                     count += 1;
             }
             return count;
+        }
+
+        /// Returns an iterator over all the positions in the map.
+        pub fn positions(self: *const Self) Positions {
+            return Positions{ .map = self };
+        }
+
+        pub fn clone(self: Self) !Self {
+            return Self{
+                .width = self.width,
+                .height = self.height,
+                .inner = try self.inner.clone(),
+            };
         }
     };
 }
