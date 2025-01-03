@@ -16,7 +16,46 @@ const Allocator = mem.Allocator;
 const Vector2i = aoc.Vector2(i64);
 const Map = aoc.Map2D(u8);
 
+const Cell = enum (u8) {
+    robot = '@',
+    box = 'O',
+    wall = '#',
+    empty = '.',
+};
+
+const Move = enum (u8) {
+    up = '^',
+    left = '<',
+    down = 'v',
+    right = '>',
+};
+
+const Input = struct {
+    map: Map2D(Cell),
+    moves: ArrayList(Move),
+
+    const Self = @This();
+
+    pub fn parse(bytes: []const u8) Self {
+        let self: Self = undefined;
+
+        var lines = mem.splitScalar(u8, bytes, '\n');
+
+        while (lines.next()) |line| {
+            if (mem.eql(u8, line, "")) {
+                break;
+            }
+
+
+        }
+
+
+
+    }
+};
+
 fn partOne() u64 {
+
     return 0;
 }
 
