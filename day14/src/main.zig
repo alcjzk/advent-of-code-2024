@@ -66,7 +66,7 @@ fn partOne(allocator: Allocator, robots: ArrayList(Robot)) u64 {
     var sector_c_robot_count: u64 = 0;
     var sector_d_robot_count: u64 = 0;
 
-    var map = Map.initSized(allocator, 101, 103) catch unreachable;
+    var map = Map.initSized(allocator, 101, 103, 0) catch unreachable;
     defer map.deinit();
 
     var positions = ArrayList(Vector2i).init(allocator);
@@ -103,7 +103,7 @@ fn partOne(allocator: Allocator, robots: ArrayList(Robot)) u64 {
 
 fn partTwo(allocator: Allocator, robots: ArrayList(Robot)) !u64 {
     for (1..math.maxInt(i64)) |seconds| {
-        var map = try Map.initSized(allocator, map_width, map_height);
+        var map = try Map.initSized(allocator, map_width, map_height, 0);
         defer map.deinit();
 
         for (robots.items) |robot| {

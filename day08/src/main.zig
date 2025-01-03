@@ -88,7 +88,7 @@ pub fn Pairs(comptime T: type) type {
 }
 
 pub fn partOne(allocator: mem.Allocator, antennas: Antennas, map_width: usize, map_height: usize) !u64 {
-    var antinodes = try Map2D(u8).initSized(allocator, map_width, map_height);
+    var antinodes = try Map2D(u8).initSized(allocator, map_width, map_height, 0);
     defer antinodes.deinit();
 
     var entries = antennas.inner.iterator();
@@ -112,7 +112,7 @@ pub fn partOne(allocator: mem.Allocator, antennas: Antennas, map_width: usize, m
 }
 
 pub fn partTwo(allocator: mem.Allocator, antennas: Antennas, map_width: usize, map_height: usize) !u64 {
-    var antinodes = try Map2D(u8).initSized(allocator, map_width, map_height);
+    var antinodes = try Map2D(u8).initSized(allocator, map_width, map_height, 0);
     defer antinodes.deinit();
 
     var entries = antennas.inner.iterator();

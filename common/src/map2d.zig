@@ -55,13 +55,13 @@ pub fn Map2D(comptime T: type) type {
             return self;
         }
 
-        pub fn initSized(allocator: Allocator, width: usize, height: usize) !Self {
+        pub fn initSized(allocator: Allocator, width: usize, height: usize, value: T) !Self {
             var self: Self = undefined;
 
             const size = width * height;
 
             self.inner = try ArrayList(T).initCapacity(allocator, size);
-            self.inner.appendNTimesAssumeCapacity(0, size);
+            self.inner.appendNTimesAssumeCapacity(value, size);
             self.width = width;
             self.height = height;
 
